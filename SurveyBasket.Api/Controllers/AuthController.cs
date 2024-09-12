@@ -15,11 +15,17 @@ namespace SurveyBasket.Api.Controllers
         private readonly IAuthService authService = authService;
         private readonly JWTOptions jWTOptions = options.Value;
 
-        [HttpPost]
+        [HttpPost("Login")]
         public async Task<IActionResult> LoginAsync([FromBody]LoginRequest request , CancellationToken token)
         {
             var authResult = await authService.GetTokenAsync(request.Email,request.Password,token);
-            return authResult is null ? BadRequest("Invalid Email or Password!") : Ok(authResult);
+            return authResult.IsSuccess ? Ok(authResult.Value) : BadRequest(authResult.Error);
+        }
+        [HttpPost("Register")]
+        public async Task<IActionResult> RegisterAsync(RegisterRequest request , CancellationToken cancellationToken)
+        {
+            var result = await authService.RegisterAsync(request,cancellationToken);
+            return result.IsSuccess ? Ok() : BadRequest(result.Error);
         }
 
         [HttpPost("RefreshTokenAsync")]
@@ -34,6 +40,18 @@ namespace SurveyBasket.Api.Controllers
             var isRevoked = await authService.RevokeTokenAsync(request.Token, request.RefreshToken, token);
             return isRevoked ? Ok() : BadRequest("Operation Failed!");
         }
-
+        
+        [HttpPost("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmailAsync([FromBody]ConfirmEmailRequest confirmEmail)
+        {
+            var result = await authService.ConfirmEmailAsync(confirmEmail);
+            return result.IsSuccess ? Ok() : BadRequest();
+        }
+        [HttpPost("ResendEmailConfirmation")]
+        public async Task<IActionResult> ResendEmailConfirm0([FromBody] ResendEmailCode code)
+        {
+            var result = await authService.ResendEmailCodeAsync(code);
+            return result.IsSuccess ? Ok() : BadRequest();
+        }
     }
 }

@@ -1,5 +1,8 @@
-﻿using MapsterMapper;
+﻿using Mapster;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using SurveyBasket.Api.Abstractions;
+using SurveyBasket.Api.Contracts.Polls;
 using SurveyBasket.Api.Models;
 
 namespace SurveyBasket.Api.Services
@@ -8,20 +11,32 @@ namespace SurveyBasket.Api.Services
     {
         private readonly ApplicationDbContext _context = context;
 
-        public async Task<IEnumerable<Poll>> GetAll(CancellationToken cancellationToken = default) => 
-            await _context.Polls.AsNoTracking().ToListAsync(cancellationToken);
-        public async Task<Poll> Add(Poll poll , CancellationToken cancellation)
+        public async Task<IEnumerable<PollResponse>> GetAll(CancellationToken cancellationToken = default) => 
+            await _context.Polls.AsNoTracking().ProjectToType<PollResponse>()
+            .ToListAsync(cancellationToken);
+        public async Task<IEnumerable<PollResponse>> GetAvailablePolls(CancellationToken cancellationToken = default)=>
+            await _context.Polls.Where(x=>x.Ispublished == true && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow)
+            && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow)).AsNoTracking()
+            .ProjectToType<PollResponse>()
+            .ToListAsync(cancellationToken);
+        public async Task<Result<PollResponse>> Add(PollRequest poll, CancellationToken cancellation = default)
         {
-            await _context.Polls.AddAsync(poll , cancellation);
+            var existingPoll = await _context.Polls.AnyAsync(x=>x.Title == poll.Title,cancellation);
+            if (existingPoll)
+                return Result.Failure<PollResponse>(new Error("Duplicated Poll Title","Another poll with same title exists"));
+            var pollEntity = poll.Adapt<Poll>();
+            await _context.Polls.AddAsync(pollEntity, cancellation);
             await _context.SaveChangesAsync(cancellation);
-            return poll;
+            return Result.Success(pollEntity.Adapt<PollResponse>());
         }
-
-        public async Task<bool> Update(int Id, Poll poll,CancellationToken cancellationToken = default)
+        public async Task<Result> Update(int Id, PollRequest poll,CancellationToken cancellationToken = default)
         {
+            var existingPoll = await _context.Polls.AnyAsync(x => x.Title == poll.Title && x.Id != Id, cancellationToken);
+            if (existingPoll)
+                return Result.Failure(new Error("Duplicated Poll Title", "Another poll with same title exists"));
             var currentpoll = await _context.Polls.SingleOrDefaultAsync(s => s.Id == Id);
             if (currentpoll == null)
-                return false;
+                return Result.Failure(new Error("Update Poll Failed","Poll Not Found"));
 
             currentpoll.Title = poll.Title;
             currentpoll.Description = poll.Description;
@@ -29,29 +44,29 @@ namespace SurveyBasket.Api.Services
             currentpoll.EndsAt = poll.EndsAt;
             await _context.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success();
         }
 
-        public async Task<bool> Delete(int Id,CancellationToken cancellationToken=default)
+        public async Task<Result> Delete(int Id,CancellationToken cancellationToken=default)
         {
             var currentpoll = await _context.Polls.SingleOrDefaultAsync(s => s.Id == Id);
             if (currentpoll == null)
-                return false;
+                return Result.Failure(new Error("Delete Poll Failed!" , "Poll Not Found"));
 
             _context.Polls.Remove(currentpoll);
             await _context.SaveChangesAsync(cancellationToken);
-            return true;
+            return Result.Success();
         }
-        public async Task<bool> TogglePublishStatus(int Id, CancellationToken cancellationToken = default)
+        public async Task<Result> TogglePublishStatus(int Id, CancellationToken cancellationToken = default)
         {
             var currentpoll = await _context.Polls.SingleOrDefaultAsync(s => s.Id == Id);
             if (currentpoll == null)
-                return false;
+                return Result.Failure(new Error("Toggle Poll Failed!","Poll Not Found"));
 
             currentpoll.Ispublished = !currentpoll.Ispublished;
             await _context.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success();
         }
     }
 }
