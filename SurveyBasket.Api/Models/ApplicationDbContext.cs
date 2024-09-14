@@ -6,7 +6,7 @@ using System.Security.Claims;
 namespace SurveyBasket.Api.Models
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor contextAccessor): 
-        IdentityDbContext<ApplicationUser>(options)
+        IdentityDbContext<ApplicationUser,ApplicationRole,string>(options)
     {
         private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
 

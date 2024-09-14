@@ -1,5 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Hangfire;
+using HangfireBasicAuthenticationFilter;
 using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using SurveyBasket.Api.Abstractions;
 using SurveyBasket.Api.Contracts.JWT;
 using SurveyBasket.Api.Models;
@@ -18,10 +21,20 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 var connectionstring = builder.Configuration.GetConnectionString("DefaultConnection");
 // Add services to the container.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+});
+builder.Services.AddHangfire(configuration => configuration
+       .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+       .UseSimpleAssemblyNameTypeSerializer()
+       .UseRecommendedSerializerSettings()
+       .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection")));
+builder.Services.AddHangfireServer();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(connectionstring));
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>()
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>().AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
@@ -80,11 +93,13 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 builder.Services.AddSingleton<IJWTProvider, JWTProvider>();
 builder.Services.AddScoped<IPollService,PollService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IResultService,ResultService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IEmailSender,EmailService>();
 builder.Services.AddScoped<IQuestionService,QuestionService>();
+builder.Services.AddScoped<INotficationService,NotficationService>();   
 builder.Services.AddMapster();
 var mappingconfig = TypeAdapterConfig.GlobalSettings;
 mappingconfig.Scan(Assembly.GetExecutingAssembly());
@@ -101,8 +116,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+app.UseHangfireDashboard("/jobs",new DashboardOptions
+{
+    Authorization = [
+        new HangfireCustomBasicAuthenticationFilter{
+            User = app.Configuration.GetValue<string>("HangfireSettings:UserName"),
+            Pass = app.Configuration.GetValue<string>("HangfireSettings:Password")
+        }
+    ],
+    DashboardTitle = "SurveyBasketJobs"
+});
+var factory = app.Services.GetRequiredService<IServiceScopeFactory>();
+using var scope = factory.CreateScope();
+var Notficationservices = scope.ServiceProvider.GetRequiredService<INotficationService>();
+RecurringJob.AddOrUpdate("SendPollNotfications",()=> Notficationservices.SendPollNotfication(null),Cron.Daily);
 app.UseAuthorization();
 app.MapControllers();
 

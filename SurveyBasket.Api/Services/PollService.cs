@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using SurveyBasket.Api.Abstractions;
@@ -7,9 +8,10 @@ using SurveyBasket.Api.Models;
 
 namespace SurveyBasket.Api.Services
 {
-    public class PollService(ApplicationDbContext context) : IPollService
+    public class PollService(ApplicationDbContext context , INotficationService notficationService) : IPollService
     {
         private readonly ApplicationDbContext _context = context;
+        private readonly INotficationService notficationService = notficationService;
 
         public async Task<IEnumerable<PollResponse>> GetAll(CancellationToken cancellationToken = default) => 
             await _context.Polls.AsNoTracking().ProjectToType<PollResponse>()
@@ -66,6 +68,8 @@ namespace SurveyBasket.Api.Services
             currentpoll.Ispublished = !currentpoll.Ispublished;
             await _context.SaveChangesAsync(cancellationToken);
 
+            if (currentpoll.Ispublished && currentpoll.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
+                BackgroundJob.Enqueue(()=> notficationService.SendPollNotfication(currentpoll.Id));
             return Result.Success();
         }
     }

@@ -16,6 +16,7 @@ namespace SurveyBasket.Api.Controllers
         [HttpGet("AllQuestions")]
         public async Task<IActionResult> GetAllQuestions(int PollId , CancellationToken cancellation)
         {
+   
             var res = await _questionService.GetAllQuestions(PollId, cancellation);
             return res.IsSuccess ? Ok(res.Value) : BadRequest(res.Error);
         }

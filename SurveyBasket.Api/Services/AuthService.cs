@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
@@ -44,14 +45,7 @@ namespace SurveyBasket.Api.Services
                 var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 Logger.LogInformation("ConfirmationCode: {code}", code);
-                var origin = ContextAccessor.HttpContext?.Request.Headers.Origin;
-                var emailbody = EmailBodyBuilder.GenerateEmailBody("EmailConfirmation",
-                   templeteModel: new Dictionary<string, string>
-                    {
-                        {"{{name}}", user.FirstName},
-                        {"{{action_url}}", $"{origin}/auth/ConfirmEmail?userId={user.Id}&code={code}"}
-                    });
-                await EmailSender.SendEmailAsync(user.Email!, "SurveyBasket", emailbody);
+                await SendConfirmationEmail(user, code);
                 return Result.Success();
             }
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -164,6 +158,63 @@ namespace SurveyBasket.Api.Services
             userfrereshtoken.RevokedOn = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
             return true;
+        }
+
+        private async Task SendConfirmationEmail(ApplicationUser user,string code)
+        {
+            var origin = ContextAccessor.HttpContext?.Request.Headers.Origin;
+            var emailbody = EmailBodyBuilder.GenerateEmailBody("EmailConfirmation",
+               templeteModel: new Dictionary<string, string>
+                {
+                        {"{{name}}", user.FirstName},
+                        {"{{action_url}}", $"{origin}/auth/ConfirmEmail?userId={user.Id}&code={code}"}
+                });
+            BackgroundJob.Enqueue(() => EmailSender.SendEmailAsync(user.Email!, "SurveyBasket", emailbody));
+            await Task.CompletedTask;
+        }
+
+        public async Task<Result> SendResetPasswordCode(string Email)
+        {
+            if (await _userManager.FindByEmailAsync(Email) is not { } user)
+                return Result.Success();
+            if (!user.EmailConfirmed)
+                return Result.Failure(new Error("UserErrors","Email is not confirmed!"));
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            Logger.LogInformation("ResetCode: {code}", code);
+            await sendResetPasswordEmail(user, code);
+            return Result.Success();
+        }
+        public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user is null || !user.EmailConfirmed)
+                return Result.Failure(new Error("UserErrors", "Invalid Code!"));
+            IdentityResult result;
+            try
+            {
+                var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Code));
+                result = await _userManager.ResetPasswordAsync(user, code, request.NewPassword);
+            }catch(FormatException)
+            {
+                result = IdentityResult.Failed(_userManager.ErrorDescriber.InvalidToken());
+            }
+            if (result.Succeeded)
+                return Result.Success();
+            var error = result.Errors.First();
+            return Result.Failure(new Error(error.Code,error.Description));
+        }
+        private async Task sendResetPasswordEmail(ApplicationUser user, string code)
+        {
+            var origin = ContextAccessor.HttpContext?.Request.Headers.Origin;
+            var emailbody = EmailBodyBuilder.GenerateEmailBody("ForgetPassword",
+               templeteModel: new Dictionary<string, string>
+                {
+                        {"{{name}}", user.FirstName},
+                        {"{{action_url}}", $"{origin}/auth/forgetPassword?email={user.Email}&code={code}"}
+                });
+            BackgroundJob.Enqueue(() => EmailSender.SendEmailAsync(user.Email!, "SurveyBasket : ResetPassword", emailbody));
+            await Task.CompletedTask;
         }
 
     }

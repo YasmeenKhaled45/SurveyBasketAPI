@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SurveyBasket.Api.Models;
 
@@ -11,9 +12,11 @@ using SurveyBasket.Api.Models;
 namespace SurveyBasket.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240914054741_UpdateRolesTable")]
+    partial class UpdateRolesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -107,13 +110,6 @@ namespace SurveyBasket.Api.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = "a1b6260e-9983-48fe-8d66-f89ebf40b0bd",
-                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -193,26 +189,6 @@ namespace SurveyBasket.Api.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "126ae60e-f646-411b-bd89-658e60f2ebff",
-                            ConcurrencyStamp = "4d7ea376-4402-4de9-930d-f46af089778e",
-                            IsDefault = false,
-                            IsDeleted = false,
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = "36ea7fb0-137f-486d-a6e1-225222d8017a",
-                            ConcurrencyStamp = "81bee964-0149-4acf-888d-098afcb8df10",
-                            IsDefault = true,
-                            IsDeleted = false,
-                            Name = "Member",
-                            NormalizedName = "MEMBER"
-                        });
                 });
 
             modelBuilder.Entity("SurveyBasket.Api.Models.ApplicationUser", b =>
@@ -288,26 +264,6 @@ namespace SurveyBasket.Api.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "a1b6260e-9983-48fe-8d66-f89ebf40b0bd",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "49d7c7b0-9201-46bc-afe8-dcfbb4ead838",
-                            Email = "admin@surveybasket.com",
-                            EmailConfirmed = true,
-                            FirstName = "SurveyBasket",
-                            LastName = "Admin",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "ADMIN@SURVEYBASKET.COM",
-                            NormalizedUserName = "ADMIN@SURVEYBASKET.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOsomlNrVYbbqGviIK4EH4F40N+qAKUfk2i9xBmic13JK7pC887Fd7ov14K1RtPz4A==",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "713DDFD886634800A5989628EF79EDE9",
-                            TwoFactorEnabled = false,
-                            UserName = "admin@surveybasket.com"
-                        });
                 });
 
             modelBuilder.Entity("SurveyBasket.Api.Models.Poll", b =>

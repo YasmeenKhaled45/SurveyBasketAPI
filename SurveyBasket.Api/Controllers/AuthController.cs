@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Contracts.JWT;
 using SurveyBasket.Api.Services;
+using LoginRequest = SurveyBasket.Api.Contracts.Authentication.LoginRequest;
+using RegisterRequest = SurveyBasket.Api.Contracts.Authentication.RegisterRequest;
+using ResetPasswordRequest = SurveyBasket.Api.Contracts.Authentication.ResetPasswordRequest;
 
 namespace SurveyBasket.Api.Controllers
 {
@@ -51,6 +55,18 @@ namespace SurveyBasket.Api.Controllers
         public async Task<IActionResult> ResendEmailConfirm0([FromBody] ResendEmailCode code)
         {
             var result = await authService.ResendEmailCodeAsync(code);
+            return result.IsSuccess ? Ok() : BadRequest();
+        }
+        [HttpPost("ForgetPassword")]
+        public async Task<IActionResult> ForgetPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var result = await authService.SendResetPasswordCode(request.Email);
+            return result.IsSuccess ? Ok() : BadRequest();
+        }
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var result = await authService.ResetPasswordAsync(request);
             return result.IsSuccess ? Ok() : BadRequest();
         }
     }
