@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SurveyBasket.Api.Constants;
+using SurveyBasket.Api.Contracts.Filters;
 using SurveyBasket.Api.Contracts.Polls;
 using SurveyBasket.Api.Models;
 using SurveyBasket.Api.Services;
@@ -12,17 +14,19 @@ namespace SurveyBasket.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+
     public class PollsController(IPollService pollService) : ControllerBase
     {
         private readonly IPollService _pollService = pollService;
 
         [HttpGet("AllPolls")]
+        [HasPermission(Permissions.GetPolls)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             return Ok(await _pollService.GetAll(cancellationToken));
         }
         [HttpGet("CurrentPolls")]
+        [Authorize(Roles = DefaultRoles.Member)]
         public async Task<IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
         {
             return Ok(await _pollService.GetAvailablePolls(cancellationToken));

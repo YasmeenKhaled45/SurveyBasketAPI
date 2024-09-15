@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using SurveyBasket.Api.Abstractions;
+using SurveyBasket.Api.Constants;
 using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Contracts.JWT;
 using SurveyBasket.Api.Helpers;
@@ -16,10 +17,12 @@ namespace SurveyBasket.Api.Services
 {
     public class AuthService(UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,IJWTProvider jWTProvider,
-        ILogger<AuthService> logger,IEmailSender emailSender,IHttpContextAccessor contextAccessor) : IAuthService
+        ILogger<AuthService> logger,IEmailSender emailSender,IHttpContextAccessor contextAccessor,
+        ApplicationDbContext context) : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IJWTProvider jWTProvider1 = jWTProvider;
+        private readonly ApplicationDbContext context = context;
         private readonly int refreshtokenexpiration = 14;
         public SignInManager<ApplicationUser> SignInManager { get; } = signInManager;
         public ILogger<AuthService> Logger { get; } = logger;
@@ -70,8 +73,11 @@ namespace SurveyBasket.Api.Services
             }
             var res = await _userManager.ConfirmEmailAsync(user, code);
             if (res.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
                 return Result.Success();
-
+            }
+               
             var errors = string.Join(", ", res.Errors.Select(e => e.Description));
             return Result.Failure(new Error("Confirmation Failed", errors));
         }
@@ -94,7 +100,9 @@ namespace SurveyBasket.Api.Services
             var result = await SignInManager.PasswordSignInAsync(user, Password, false, false);
             if(result.Succeeded)
             {
-                var (Token, ExpiresIn) = jWTProvider1.GenerateToken(user);
+                var (userroles, userpermissions) = await GetUserRolesAndPermissions(user);
+           
+                var (Token, ExpiresIn) = jWTProvider1.GenerateToken(user,userroles,userpermissions);
                 var refreshtoken = GenereateRefreshToken();
                 var refreshtokenExpiration = DateTime.UtcNow.AddDays(refreshtokenexpiration);
 
@@ -124,7 +132,8 @@ namespace SurveyBasket.Api.Services
                 return null;
 
             userfrereshtoken.RevokedOn = DateTime.UtcNow;
-            var (newtoken, ExpiresIn) = jWTProvider1.GenerateToken(user);
+            var (userroles, userpermissions) = await GetUserRolesAndPermissions(user);
+            var (newtoken, ExpiresIn) = jWTProvider1.GenerateToken(user,userroles,userpermissions);
             var newrefreshtoken = GenereateRefreshToken();
             var refreshtokenExpiration = DateTime.UtcNow.AddDays(refreshtokenexpiration);
 
@@ -217,6 +226,17 @@ namespace SurveyBasket.Api.Services
             await Task.CompletedTask;
         }
 
+        private async Task<(IEnumerable<string> Roles , IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await (from r in context.Roles
+                                     join p in context.RoleClaims
+                                     on r.Id equals p.RoleId
+                                     where roles.Contains(r.Name!)
+                                     select p.ClaimValue!)
+                                      .Distinct().ToListAsync();
+            return (roles, permissions);
+        }
     }
 
 }

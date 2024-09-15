@@ -12,8 +12,8 @@ using SurveyBasket.Api.Models;
 namespace SurveyBasket.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240914054741_UpdateRolesTable")]
-    partial class UpdateRolesTable
+    [Migration("20240915133636_Surveybasket")]
+    partial class Surveybasket
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,6 +48,99 @@ namespace SurveyBasket.Api.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetRoleClaims", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ClaimType = "permissions",
+                            ClaimValue = "polls:get",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ClaimType = "permissions",
+                            ClaimValue = "polls:add",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ClaimType = "permissions",
+                            ClaimValue = "polls:update",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            ClaimType = "permissions",
+                            ClaimValue = "questions:get",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            ClaimType = "permissions",
+                            ClaimValue = "questions:add",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            ClaimType = "permissions",
+                            ClaimValue = "questions:update",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            ClaimType = "permissions",
+                            ClaimValue = "users:get",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            ClaimType = "permissions",
+                            ClaimValue = "users:add",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ClaimType = "permissions",
+                            ClaimValue = "users:update",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            ClaimType = "permissions",
+                            ClaimValue = "roles:get",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            ClaimType = "permissions",
+                            ClaimValue = "roles:add",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            ClaimType = "permissions",
+                            ClaimValue = "roles:update",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            ClaimType = "permissions",
+                            ClaimValue = "results:read",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -110,6 +203,13 @@ namespace SurveyBasket.Api.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "a1b6260e-9983-48fe-8d66-f89ebf40b0bd",
+                            RoleId = "126ae60e-f646-411b-bd89-658e60f2ebff"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -189,6 +289,26 @@ namespace SurveyBasket.Api.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "126ae60e-f646-411b-bd89-658e60f2ebff",
+                            ConcurrencyStamp = "4d7ea376-4402-4de9-930d-f46af089778e",
+                            IsDefault = false,
+                            IsDeleted = false,
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "36ea7fb0-137f-486d-a6e1-225222d8017a",
+                            ConcurrencyStamp = "81bee964-0149-4acf-888d-098afcb8df10",
+                            IsDefault = true,
+                            IsDeleted = false,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        });
                 });
 
             modelBuilder.Entity("SurveyBasket.Api.Models.ApplicationUser", b =>
@@ -264,6 +384,26 @@ namespace SurveyBasket.Api.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "a1b6260e-9983-48fe-8d66-f89ebf40b0bd",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "49d7c7b0-9201-46bc-afe8-dcfbb4ead838",
+                            Email = "admin@surveybasket.com",
+                            EmailConfirmed = true,
+                            FirstName = "SurveyBasket",
+                            LastName = "Admin",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@SURVEYBASKET.COM",
+                            NormalizedUserName = "ADMIN@SURVEYBASKET.COM",
+                            PasswordHash = "AQAAAAIAAYagAAAAEO9YlyD0PlKkzBtn6WJHPThTkueVM0Hq3CM2DEsS/rQbk4+nXuDEDr11Oy8W3gmyjQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "713DDFD886634800A5989628EF79EDE9",
+                            TwoFactorEnabled = false,
+                            UserName = "admin@surveybasket.com"
+                        });
                 });
 
             modelBuilder.Entity("SurveyBasket.Api.Models.Poll", b =>

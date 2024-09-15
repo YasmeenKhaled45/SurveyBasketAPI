@@ -23,6 +23,7 @@ namespace SurveyBasket.Api.EntitiesConfigurations
                 });
                 
             }
+            builder.HasData(adminclaims);
         }
     }
 }

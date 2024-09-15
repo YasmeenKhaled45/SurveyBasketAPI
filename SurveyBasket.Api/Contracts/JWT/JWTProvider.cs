@@ -4,20 +4,23 @@ using SurveyBasket.Api.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace SurveyBasket.Api.Contracts.JWT
 {
     public class JWTProvider(IOptions<JWTOptions> options): IJWTProvider
     {
         private readonly JWTOptions jWTOptions = options.Value;
-        public (string Token, int ExpiresIn) GenerateToken(ApplicationUser user)
+        public (string Token, int ExpiresIn) GenerateToken(ApplicationUser user,IEnumerable<string> Roles,IEnumerable<string> permissions)
         {
             Claim[] claims = [
                 new(JwtRegisteredClaimNames.Sub,user.Id),
                 new(JwtRegisteredClaimNames.Email,user.Email!),
                  new(JwtRegisteredClaimNames.GivenName,user.FirstName),
                   new(JwtRegisteredClaimNames.FamilyName,user.LastName),
-                   new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                   new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                   new (nameof(Roles),JsonSerializer.Serialize(Roles),JsonClaimValueTypes.JsonArray),
+                  new (nameof(permissions),JsonSerializer.Serialize(permissions),JsonClaimValueTypes.JsonArray),
               ];
             var signingkey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jWTOptions.key));
             var signingCredentials = new SigningCredentials(signingkey, SecurityAlgorithms.HmacSha256);
