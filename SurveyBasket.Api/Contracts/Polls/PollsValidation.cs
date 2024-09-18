@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
-using SurveyBasket.Api.Contracts.Polls;
 
-namespace SurveyBasket.Api.Validations
+namespace SurveyBasket.Api.Contracts.Polls
 {
     public class PollsValidation : AbstractValidator<PollRequest>
     {
@@ -10,11 +9,11 @@ namespace SurveyBasket.Api.Validations
             RuleFor(x => x.Title).
                 NotEmpty()
                 .WithMessage("Please add a {PropertyName}!")
-                .Length(3,5);
+                .Length(3, 5);
 
-            RuleFor(x=>x.Description).NotEmpty()
+            RuleFor(x => x.Description).NotEmpty()
                 .Length(3, 1000);
-            RuleFor(x=>x.StartsAt).NotEmpty()
+            RuleFor(x => x.StartsAt).NotEmpty()
                 .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today));
             RuleFor(x => x.EndsAt).NotEmpty();
             RuleFor(x => x).Must(HasValidDates)

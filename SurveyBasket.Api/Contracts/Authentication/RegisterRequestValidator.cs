@@ -1,11 +1,10 @@
 ﻿using FluentValidation;
-using SurveyBasket.Api.Contracts.Authentication;
 
-namespace SurveyBasket.Api.Validations
+namespace SurveyBasket.Api.Contracts.Authentication
 {
     public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
     {
-        public RegisterRequestValidator() 
+        public RegisterRequestValidator()
         {
             RuleFor(x => x.Email).NotEmpty()
                 .EmailAddress();
@@ -15,8 +14,8 @@ namespace SurveyBasket.Api.Validations
                 .WithMessage("Password must be at least 8 digits and should contain Lowercase, NonAlphanummeric and Uppercase");
             RuleFor(x => x.FirstName).NotEmpty()
                 .Length(3, 100);
-            RuleFor(x=> x.LastName).NotEmpty().
-              Length(3,100);
+            RuleFor(x => x.LastName).NotEmpty().
+              Length(3, 100);
         }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using FluentValidation;
-using SurveyBasket.Api.Contracts.Questions;
 
-namespace SurveyBasket.Api.Validations
+namespace SurveyBasket.Api.Contracts.Questions
 {
     public class QuestionRequestValidator : AbstractValidator<QuestionRequest>
     {
-        public QuestionRequestValidator() 
+        public QuestionRequestValidator()
         {
             RuleFor(x => x.Content).NotEmpty()
                 .Length(3, 1000);

@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Identity.Data;
 
-namespace SurveyBasket.Api.Validations
+namespace SurveyBasket.Api.Contracts.Authentication
 {
     public class LoginRequestValidator : AbstractValidator<LoginRequest>
     {

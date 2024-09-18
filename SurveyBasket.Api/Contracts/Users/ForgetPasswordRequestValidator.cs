@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using SurveyBasket.Api.Contracts.Authentication;
 
-namespace SurveyBasket.Api.Validations
+namespace SurveyBasket.Api.Contracts.Users
 {
     public class ForgetPasswordRequestValidator : AbstractValidator<ForgetPasswordRequest>
     {
-        public ForgetPasswordRequestValidator() 
+        public ForgetPasswordRequestValidator()
         {
             RuleFor(x => x.Email).NotEmpty()
                .EmailAddress();

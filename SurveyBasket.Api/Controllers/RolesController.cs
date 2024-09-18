@@ -28,7 +28,7 @@ namespace SurveyBasket.Api.Controllers
             return result.IsSuccess ? Ok(result.Value) : BadRequest(result);
         }
         [HttpPost("{id}")]
-        [HasPermission(Permissions.AddRoles)]
+        [HasPermission(Permissions.UpdateRoles)]
         public async Task<IActionResult> UpdateRole([FromRoute]string id,[FromBody] RoleRequest request)
         {
             var result = await roleService.UpdateRole(id, request);
