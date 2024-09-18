@@ -19,19 +19,19 @@ namespace SurveyBasket.Api.Controllers
     {
         private readonly IPollService _pollService = pollService;
 
-        [HttpGet("AllPolls")]
+        [HttpGet("")]
         [HasPermission(Permissions.GetPolls)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             return Ok(await _pollService.GetAll(cancellationToken));
         }
-        [HttpGet("CurrentPolls")]
+        [HttpGet("Current")]
         [Authorize(Roles = DefaultRoles.Member)]
         public async Task<IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
         {
             return Ok(await _pollService.GetAvailablePolls(cancellationToken));
         }
-        [HttpPost("Poll")]
+        [HttpPost("")]
         [HasPermission(Permissions.AddPolls)]
         public async Task<IActionResult> Add([FromBody] PollRequest poll ,
             CancellationToken cancellation)
