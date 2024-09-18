@@ -13,14 +13,14 @@ namespace SurveyBasket.Api.Controllers
     public class RolesController(IRoleService roleService) : ControllerBase
     {
         private readonly IRoleService roleService = roleService;
-        [HttpGet("GetRoles")]
+        [HttpGet("")]
         [HasPermission(Permissions.GetRoles)]
         public async Task<IActionResult> GetAllRoles(CancellationToken cancellationToken)
         {
             var result = await roleService.GetAllRoles(cancellationToken);
             return Ok(result);
         }
-        [HttpPost("AddRole")]
+        [HttpPost("")]
         [HasPermission(Permissions.AddRoles)]
         public async Task<IActionResult> Add([FromBody] RoleRequest request)
         {
