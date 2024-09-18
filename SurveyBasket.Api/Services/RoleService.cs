@@ -49,6 +49,56 @@ namespace SurveyBasket.Api.Services
             var error = res.Errors.First();
             return Result.Failure<RoleDetailResponse>(new Error(error.Code, error.Description));
         }
+        public async Task<Result> UpdateRole(string Id, RoleRequest request)
+        {
+            var roleIsExists = await roleManager.Roles.AnyAsync(x => x.Name == request.Name && x.Id != Id);
 
+            if (roleIsExists)
+                return Result.Failure<RoleDetailResponse>(new Error("RoleErrors", "DuplicatedRole!"));
+
+            if (await roleManager.FindByIdAsync(Id) is not { } role)
+                return Result.Failure<RoleDetailResponse>(new Error("RoleErrors", "RoleNotFound!"));
+
+            var allowedPermissions = Permissions.GetAllPermissions();
+
+            if (request.permissions.Except(allowedPermissions).Any())
+                return Result.Failure<RoleDetailResponse>(new Error("RoleErrors", "InvalidPermissions!"));
+
+            role.Name = request.Name;
+
+            var result = await roleManager.UpdateAsync(role);
+
+            if (result.Succeeded)
+            {
+                var currentPermissions = await context.RoleClaims
+                    .Where(x => x.RoleId == Id && x.ClaimType == Permissions.Type)
+                    .Select(x => x.ClaimValue)
+                    .ToListAsync();
+
+                var newPermissions = request.permissions.Except(currentPermissions)
+                    .Select(x => new IdentityRoleClaim<string>
+                    {
+                        ClaimType = Permissions.Type,
+                        ClaimValue = x,
+                        RoleId = role.Id
+                    });
+
+                var removedPermissions = currentPermissions.Except(request.permissions);
+
+                await context.RoleClaims
+                    .Where(x => x.RoleId == Id && removedPermissions.Contains(x.ClaimValue))
+                .ExecuteDeleteAsync();
+
+
+                await context.AddRangeAsync(newPermissions);
+                await context.SaveChangesAsync();
+
+                return Result.Success();
+            }
+
+            var error = result.Errors.First();
+
+            return Result.Failure<RoleDetailResponse>(new Error(error.Code, error.Description));
+        }
     }
 }
