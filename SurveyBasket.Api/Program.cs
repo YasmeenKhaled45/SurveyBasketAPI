@@ -8,17 +8,21 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using SurveyBasket.Api.Abstractions;
+using SurveyBasket.Api.Constants;
 using SurveyBasket.Api.Contracts.Filters;
 using SurveyBasket.Api.Contracts.JWT;
 using SurveyBasket.Api.Models;
 using SurveyBasket.Api.Services;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionstring = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -27,7 +31,40 @@ builder.Host.UseSerilog((context, configuration) =>
 {
     configuration.ReadFrom.Configuration(context.Configuration);
 });
-builder.Services.AddHangfire(configuration => configuration
+builder.Services.AddHealthChecks();
+builder.Services.AddRateLimiter(rateLimiterOptions =>
+ {
+     rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+     rateLimiterOptions.AddPolicy(RateLimiters.IpLimiter, httpContext =>
+         RateLimitPartition.GetFixedWindowLimiter(
+             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+             factory: _ => new FixedWindowRateLimiterOptions
+             {
+                 PermitLimit = 2,
+                 Window = TimeSpan.FromSeconds(20)
+             }
+     )
+     );
+
+     rateLimiterOptions.AddPolicy(RateLimiters.UserLimiter, httpContext =>
+         RateLimitPartition.GetFixedWindowLimiter(
+             partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
+             factory: _ => new FixedWindowRateLimiterOptions
+             {
+                 PermitLimit = 2,
+                 Window = TimeSpan.FromSeconds(20)
+             }
+     )
+     );
+     rateLimiterOptions.AddConcurrencyLimiter(RateLimiters.Concurrency, options =>
+     {
+         options.PermitLimit = 1000;
+         options.QueueLimit = 100;
+         options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+     });
+ });
+ builder.Services.AddHangfire(configuration => configuration
        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
        .UseSimpleAssemblyNameTypeSerializer()
        .UseRecommendedSerializerSettings()
@@ -35,7 +72,8 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(connectionstring));
-builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+builder.Services.AddOptions<MailSettings>().BindConfiguration(nameof(MailSettings))
+    .ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>().AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddControllers();
@@ -100,6 +138,7 @@ builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IResultService,ResultService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IEmailSender,EmailService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IQuestionService,QuestionService>();
 builder.Services.AddScoped<INotficationService,NotficationService>();
 builder.Services.AddTransient<IAuthorizationHandler, PermissionHandler>();
@@ -138,5 +177,6 @@ var Notficationservices = scope.ServiceProvider.GetRequiredService<INotficationS
 RecurringJob.AddOrUpdate("SendPollNotfications",()=> Notficationservices.SendPollNotfication(null),Cron.Daily);
 app.UseAuthorization();
 app.MapControllers();
-
+app.MapHealthChecks("health");
+app.UseRateLimiter();
 app.Run();

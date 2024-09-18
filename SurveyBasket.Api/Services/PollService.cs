@@ -40,10 +40,7 @@ namespace SurveyBasket.Api.Services
             if (currentpoll == null)
                 return Result.Failure(new Error("Update Poll Failed","Poll Not Found"));
 
-            currentpoll.Title = poll.Title;
-            currentpoll.Description = poll.Description;
-            currentpoll.StartsAt = poll.StartsAt;
-            currentpoll.EndsAt = poll.EndsAt;
+           currentpoll = poll.Adapt(currentpoll);    
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result.Success();

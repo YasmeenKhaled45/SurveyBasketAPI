@@ -32,6 +32,7 @@ namespace SurveyBasket.Api.Controllers
             return Ok(await _pollService.GetAvailablePolls(cancellationToken));
         }
         [HttpPost("Poll")]
+        [HasPermission(Permissions.AddPolls)]
         public async Task<IActionResult> Add([FromBody] PollRequest poll ,
             CancellationToken cancellation)
         {
@@ -40,6 +41,7 @@ namespace SurveyBasket.Api.Controllers
             return polls.IsSuccess ? Ok(poll) : BadRequest(polls.Error);
         }
         [HttpPut("{Id}")]
+        [HasPermission(Permissions.UpdatePolls)]
         public async Task<IActionResult> Update([FromRoute] int Id, [FromBody] PollRequest poll,CancellationToken cancellationToken)
         {
             var Ispudated = await _pollService.Update(Id, poll ,cancellationToken);
@@ -53,6 +55,7 @@ namespace SurveyBasket.Api.Controllers
         }
 
         [HttpPut("{Id}/TogglePublish")]
+        [HasPermission(Permissions.UpdatePolls)]
         public async Task<IActionResult> TogglePublish([FromRoute]int Id , CancellationToken cancellationToken)
         {
             var ispudated = await _pollService.TogglePublishStatus(Id,cancellationToken);

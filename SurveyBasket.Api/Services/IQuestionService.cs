@@ -5,7 +5,7 @@ namespace SurveyBasket.Api.Services
 {
     public interface IQuestionService
     {
-        Task<Result<IEnumerable<QuestionResponse>>> GetAllQuestions(int PollId,CancellationToken cancellationToken);
+        Task<Result<PaginatedList<QuestionResponse>>> GetAllQuestions(int PollId,RequestFilters filters,CancellationToken cancellationToken);
         Task<Result<IEnumerable<QuestionResponse>>> GetAvailableQuestions(int PollId, string UserId, CancellationToken cancellationToken);
         Task<Result<QuestionResponse>> GetQuestionById(int PollId, int Id, CancellationToken cancellationToken);
         Task<Result<QuestionResponse>> AddAsync(int PollId, QuestionRequest question,CancellationToken cancellationToken);

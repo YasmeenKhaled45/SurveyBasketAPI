@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
+using SurveyBasket.Api.Constants;
 using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Contracts.JWT;
 using SurveyBasket.Api.Services;
@@ -14,14 +16,17 @@ namespace SurveyBasket.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController(IAuthService authService , IOptions<JWTOptions> options) : ControllerBase
+    [EnableRateLimiting(RateLimiters.IpLimiter)]
+    public class AuthController(IAuthService authService , IOptions<JWTOptions> options,ILogger<AuthController> logger) : ControllerBase
     {
         private readonly IAuthService authService = authService;
+        private readonly ILogger<AuthController> logger = logger;
         private readonly JWTOptions jWTOptions = options.Value;
 
         [HttpPost("Login")]
         public async Task<IActionResult> LoginAsync([FromBody]LoginRequest request , CancellationToken token)
         {
+            logger.LogInformation("Logging with email: {email} and password: {password}", request.Email, request.Password);
             var authResult = await authService.GetTokenAsync(request.Email,request.Password,token);
             return authResult.IsSuccess ? Ok(authResult.Value) : BadRequest(authResult.Error);
         }

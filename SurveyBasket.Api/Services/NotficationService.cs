@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using SurveyBasket.Api.Constants;
 using SurveyBasket.Api.Helpers;
 using SurveyBasket.Api.Models;
 
@@ -29,7 +30,7 @@ namespace SurveyBasket.Api.Services
                     Where(x=>x.Ispublished && x.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
                     .AsNoTracking().ToListAsync();
             }
-            var users = await userManager.Users.ToListAsync();
+            var users = await userManager.GetUsersInRoleAsync(DefaultRoles.Member);
             var origin = contextAccessor.HttpContext?.Request.Headers.Origin;
             foreach (var poll in polls)
             {

@@ -4,22 +4,27 @@ using SurveyBasket.Api.Abstractions;
 using SurveyBasket.Api.Contracts.Answers;
 using SurveyBasket.Api.Contracts.Questions;
 using SurveyBasket.Api.Models;
-
+using System.Linq.Dynamic.Core;
 namespace SurveyBasket.Api.Services
 {
     public class QuestionService(ApplicationDbContext context) : IQuestionService
     {
         private readonly ApplicationDbContext Context = context;
 
-        public async Task<Result<IEnumerable<QuestionResponse>>> GetAllQuestions(int PollId, CancellationToken cancellationToken)
+        public async Task<Result<PaginatedList<QuestionResponse>>> GetAllQuestions(int PollId, RequestFilters filters,CancellationToken cancellationToken)
         {
             var pollexists = await Context.Polls.AnyAsync(x => x.Id == PollId);
             if (!pollexists)
-                return Result.Failure<IEnumerable<QuestionResponse>>(new Error("AddQuestionFailed", "Poll Not Found!"));
-            var questions = await Context.Questions.Where(x=>x.PollId == PollId)
-                .Include(x=>x.Answers).ProjectToType<QuestionResponse>().AsNoTracking().ToListAsync(cancellationToken);
-
-            return Result.Success<IEnumerable<QuestionResponse>>(questions);
+                return Result.Failure<PaginatedList<QuestionResponse>>(new Error("AddQuestionFailed", "Poll Not Found!"));
+            var query = Context.Questions.Where(x => x.PollId == PollId);
+            if (!string.IsNullOrEmpty(filters.SortColumn))
+            {
+                query = query.OrderBy($"{filters.SortColumn} {filters.SortDirection}");
+            }
+            var source = query.Include(x => x.Answers).ProjectToType<QuestionResponse>()
+                .AsNoTracking();
+            var questions = await PaginatedList<QuestionResponse>.Create(source, filters.PageNumber, filters.PageSize, cancellationToken);
+            return Result.Success(questions);
         }
         public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableQuestions(int PollId, string UserId, CancellationToken cancellationToken)
         {
