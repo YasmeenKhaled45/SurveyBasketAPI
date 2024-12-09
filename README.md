@@ -1,3 +1,6 @@
+
+![Uploading Screenshot (43).png…]()
+
 Overview
 The Survey Basket API is a comprehensive and user-friendly platform for managing surveys, polls, and user responses.
 It facilitates creating, retrieving, and analyzing polls and questions while ensuring scalability ,
